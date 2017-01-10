@@ -87,8 +87,6 @@ export default class Toolbar extends React.Component {
     // eslint-disable-next-line react/no-find-dom-node
     const parent = ReactDOM.findDOMNode(this.props.editorNode);
     const parentBoundary = parent.getBoundingClientRect();
-    // eslint-disable-next-line
-    console.log(parentBoundary);
     /*
     * Main logic for setting the toolbar position.
     */
@@ -250,14 +248,6 @@ export default class Toolbar extends React.Component {
         className={`md-editor-toolbar${(isOpen ? ' md-editor-toolbar--isopen' : '')}`}
         ref={(node) => { this._toolbarNode = node; }}
       >
-        {this.props.blockButtons.length > 0 ? (
-          <BlockToolbar
-            editorState={editorState}
-            onToggle={this.props.toggleBlockType}
-            buttons={this.props.blockButtons}
-          />
-        ) : null}
-        <div className="md-editor-toolbar--arrow" ref={(node) => { this._arrowNode = node; }} />
         {this.props.inlineButtons.length > 0 ? (
           <InlineToolbar
             editorState={editorState}
@@ -265,10 +255,18 @@ export default class Toolbar extends React.Component {
             buttons={this.props.inlineButtons}
           />
         ) : null}
+        <div className="md-editor-toolbar--arrow" ref={(node) => { this._arrowNode = node; }} />
+        {this.props.blockButtons.length > 0 ? (
+          <BlockToolbar
+            editorState={editorState}
+            onToggle={this.props.toggleBlockType}
+            buttons={this.props.blockButtons}
+          />
+        ) : null}
         {hasHyperLink && (
           <div className="md-RichEditor-controls">
             <a
-              className="md-RichEditor-styleButton md-RichEditor-linkButton hint--top"
+              className="md-RichEditor-styleButton md-RichEditor-linkButton"
               href="#open-link-input"
               onClick={this.handleLinkInput}
               aria-label={hyperlinkDescription}
