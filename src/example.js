@@ -9,7 +9,6 @@ import {
   KeyBindingUtil,
   Modifier,
   AtomicBlockUtils,
-  Entity,
 } from 'draft-js';
 
 import 'draft-js/dist/Draft.css';
@@ -40,6 +39,13 @@ import {
   NOT_HANDLED
 } from './index';
 
+import {
+  setRenderOptions,
+  blockToHTML,
+  entityToHTML,
+  styleToHTML,
+} from './exporter';
+
 
 const newTypeMap = StringToTypeMap;
 newTypeMap['2.'] = Block.OL;
@@ -54,6 +60,38 @@ const DQUOTE_START = '“';
 const DQUOTE_END = '”';
 const SQUOTE_START = '‘';
 const SQUOTE_END = '’';
+
+const newBlockToHTML = (block) => {
+  const blockType = block.type;
+  if (block.type === Block.ATOMIC) {
+    if (block.text === 'E') {
+      return {
+        start: '<figure class="md-block-atomic md-block-atomic-embed">',
+        end: '</figure>',
+      };
+    } else if (block.text === '-') {
+      return <div className="md-block-atomic md-block-atomic-break"><hr/></div>;
+    }
+  }
+  return blockToHTML(block);
+};
+
+const newEntityToHTML = (entity, originalText) => {
+  if (entity.type === 'embed') {
+    return (
+      <div>
+        <a
+          className="embedly-card"
+          href={entity.data.url}
+          data-card-controls="0"
+          data-card-theme="dark"
+        >Embedded ― {entity.data.url}
+        </a>
+      </div>
+    );
+  }
+  return entityToHTML(entity, originalText);
+};
 
 const handleBeforeInput = (editorState, str, onChange) => {
   if (str === '"' || str === '\'') {
@@ -86,10 +124,14 @@ class SeparatorSideButton extends React.Component {
   }
 
   onClick() {
-    const entityKey = Entity.create('separator', 'IMMUTABLE', {});
+    let editorState = this.props.getEditorState();
+    const content = editorState.getCurrentContent();
+    const contentWithEntity = content.createEntity('separator', 'IMMUTABLE', {});
+    const entityKey = contentWithEntity.getLastCreatedEntityKey();
+    editorState = EditorState.push(editorState, contentWithEntity, 'create-entity');
     this.props.setEditorState(
       AtomicBlockUtils.insertAtomicBlock(
-        this.props.getEditorState(),
+        editorState,
         entityKey,
         '-'
       )
@@ -136,10 +178,14 @@ class EmbedSideButton extends React.Component {
   }
 
   addEmbedURL(url) {
-    const entityKey = Entity.create('embed', 'IMMUTABLE', {url});
+    let editorState = this.props.getEditorState();
+    const content = editorState.getCurrentContent();
+    const contentWithEntity = content.createEntity('embed', 'IMMUTABLE', {url});
+    const entityKey = contentWithEntity.getLastCreatedEntityKey();
+    editorState = EditorState.push(editorState, contentWithEntity, 'create-entity');
     this.props.setEditorState(
       AtomicBlockUtils.insertAtomicBlock(
-        this.props.getEditorState(),
+        editorState,
         entityKey,
         'E'
       )
@@ -229,7 +275,8 @@ const AtomicSeparatorComponent = (props) => (
 
 const AtomicBlock = (props) => {
   const { blockProps, block } = props;
-  const entity = Entity.get(block.getEntityAt(0));
+  const content = blockProps.getEditorState().getCurrentContent();
+  const entity = content.getEntity(block.getEntityAt(0));
   const data = entity.getData();
   const type = entity.getType();
   if (blockProps.components[type]) {
@@ -275,9 +322,16 @@ class App extends React.Component {
       component: SeparatorSideButton,
     }];
 
+    this.exporter = setRenderOptions({
+      styleToHTML,
+      blockToHTML: newBlockToHTML,
+      entityToHTML: newEntityToHTML,
+    });
+
     this.getEditorState = () => this.state.editorState;
 
     this.logData = this.logData.bind(this);
+    this.renderHTML = this.renderHTML.bind(this);
     this.toggleEdit = this.toggleEdit.bind(this);
     this.fetchData = this.fetchData.bind(this);
     this.loadSavedData = this.loadSavedData.bind(this);
@@ -288,8 +342,7 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    // setTimeout(this.fetchData, 1000);
-    this.refs.editor.focus();
+    setTimeout(this.fetchData, 1000);
   }
 
   rendererFn(setEditorState, getEditorState) {
@@ -307,6 +360,7 @@ class App extends React.Component {
             editable: false,
             props: {
               components: atomicRenderers,
+              getEditorState,
             },
           };
         default: return rFnOld(contentBlock);
@@ -368,7 +422,7 @@ class App extends React.Component {
           editorState: createEditorState(data),
           placeholder: 'Write here...'
         }, () => {
-          this.refs.editor.focus();
+          this._editor.focus();
         });
         window.ga('send', 'event', 'draftjs', 'data-success');
       }
@@ -377,10 +431,20 @@ class App extends React.Component {
   }
 
   logData(e) {
-    const es = convertToRaw(this.state.editorState.getCurrentContent());
+    const currentContent = this.state.editorState.getCurrentContent();
+    const es = convertToRaw(currentContent);
     console.log(es);
     console.log(this.state.editorState.getSelection().toJS());
     window.ga('send', 'event', 'draftjs', 'log-data');
+  }
+
+  renderHTML(e) {
+    const currentContent = this.state.editorState.getCurrentContent();
+    const eHTML = this.exporter(currentContent);
+    var newWin = window.open(
+      `${window.location.pathname}rendered.html`,
+      'windowName',`height=${window.screen.height},width=${window.screen.wdith}`);
+    newWin.onload = () => newWin.postMessage(eHTML, window.location.origin);
   }
 
   loadSavedData() {
@@ -391,7 +455,7 @@ class App extends React.Component {
     try {
       const blockData = JSON.parse(data);
       console.log(blockData);
-      this.onChange( EditorState.push(this.state.editorState, convertFromRaw(blockData)), this.refs.editor.focus);
+      this.onChange( EditorState.push(this.state.editorState, convertFromRaw(blockData)), this._editor.focus);
     } catch(e) {
       console.log(e);
     }
@@ -436,10 +500,11 @@ class App extends React.Component {
       <div>
         <div className="editor-action">
           <button onClick={this.logData}>Log State</button>
+          <button onClick={this.renderHTML}>Render HTML</button>
           <button onClick={this.toggleEdit}>Toggle Edit</button>
         </div>
         <Editor
-          ref="editor"
+          ref={(e) => {this._editor = e;}}
           editorState={editorState}
           onChange={this.onChange}
           editorEnabled={editorEnabled}

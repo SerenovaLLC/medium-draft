@@ -7,7 +7,9 @@
   "rules": {
     "no-underscore-dangle": [0],
     "react/jsx-filename-extension": [0, { "extensions": [".js", ".jsx"] }],
-    "new-cap": [0]
+    "new-cap": [0],
+    "react/require-extension": "off",
+    "max-len": [0]
   },
   "globals": {
     "describe": true,

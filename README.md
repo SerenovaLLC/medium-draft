@@ -202,7 +202,7 @@ class CustomImageSideButton extends ImageSideButton {
               this.props.setEditorState(addNewBlock(
                 this.props.getEditorState(),
                 Block.IMAGE, {
-                  src,
+                  src: data.url,
                 }
               ));
             }  
@@ -258,17 +258,72 @@ class App extends React.Component {
 };
 ```
 
+### Render data to HTML
+
+The feature to export HTML is available from version `0.4.1` onwards.
+
+`medium-draft` uses [draft-convert](https://github.com/hubspot/draft-convert) (which in turn uses react-dom-server) to render `draft-js`'s `editorState` to HTML.
+
+The exporter is not a part of the core library. If you want to use `medium-draft-exporter`, follow these steps -
+
+#### Browserify/webpack
+
+- `npm install draft-convert`.
+
+`draft-convert` is part of `peerDependencies` of `medium-draft`.
+
+##### Code
+
+```js
+  import mediumDraftExporter from 'medium-draft/lib/exporter';
+  const editorState = /* your draft editorState */;
+  const renderedHTML = mediumDraftExporter(editorState.getCurrentContent());
+  /* Use renderedHTML */
+```
+
+#### Browser
+
+- Add the following scripts before your js code.
+
+```html
+<script src="https://unpkg.com/react-dom@15.2.1/dist/react-dom-server.min.js"></script>
+<script src="https://unpkg.com/draft-convert@1.3.3/dist/draft-convert.min.js"></script>
+<script src="https://unpkg.com/medium-draft/dist/medium-draft-exporter.js"></script>
+```
+
+The exporter is available as `MediumDraftExporter` global;
+
+- JS
+
+```js
+var mediumDraftExporter = MediumDraftExporter.default;
+const editorState = /* your draft editorState */;
+const renderedHTML = mediumDraftExporter(editorState.getCurrentContent());
+/* Use renderedHTML */
+```
+
+The `medium-draft-exporter` also comes with a preset CSS if you want to apply some basic styles to the rendered HTML.
+
+- In webpack, as part of your rendered HTML's page, use this-
+  ```js
+  import 'medium-draft/lib/basic.css'
+  ```
+
+- In browser, in your rendered html's page, you can include this stylesheet link
+  ```html
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/medium-draft/dist/basic.css">
+  ```
 
 ### Issues
 
-- [ ] Write an exporter to export draft data to HTML specifically for `medium-draft`.
+- [x] Write an exporter to export draft data to HTML specifically for `medium-draft`.
 - [ ] Figure out a way to show placeholder text for empty image captions.
 - [x] Currently, the toolbar that appears when text is selected needs to be fixed regarding its position in the viewport.
 
 ### Developer
 
 - Clone this repo `git clone https://github.com/brijeshb42/medium-draft.git`.
-- Install node packages `npm install`.
+- Install node packages `npm install react react-dom draft-convert && npm install`.
 - Start local demo `npm run dev`. This will start a local server on port `8080`.
 - Build using `npm run build`.
 

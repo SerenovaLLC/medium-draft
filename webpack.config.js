@@ -4,7 +4,6 @@ var path = require('path');
 var fs = require('fs');
 var webpack = require('webpack');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
-var DashboardPlugin = require('webpack-dashboard/plugin');
 
 var ENV_DEV = 'development';
 var ENV_PROD = 'production';
@@ -60,21 +59,18 @@ var hashJsonPlugin = function() {
 function getPlugins(env) {
   var plugins = [definePlugin];
   if (!isProd) {
-    plugins.push(new DashboardPlugin());
-    plugins.push(new webpack.NoErrorsPlugin());
+    plugins.push(new webpack.NoEmitOnErrorsPlugin());
     plugins.push(vendorPlugin);
     plugins.push(commonsPlugin);
   } else {
     plugins.push(new ExtractTextPlugin('[name].css'));
     // plugins.push(new ExtractTextPlugin(isDev ? '[name].css' : '[name].[hash].css'));
     plugins.push(hashJsonPlugin);
-    plugins.push(new webpack.optimize.DedupePlugin());
     plugins.push(new webpack.optimize.UglifyJsPlugin({
-      output: {comments: false},
-      compress: {
-        warnings: false,
-        dead_code: true,
-      },
+      sourceMap: false,
+      output: { comments: false },
+      debug: false,
+      compress: { warnings: false, dead_code: true }
     }));
     plugins.push(bannerPlugin);
   }
@@ -93,16 +89,13 @@ function getEntry(env) {
       'immutable',
       'draft-js',
     ]
-    entries.push('webpack-dev-server/client?http://localhost:8080/');
-    entries.push('webpack/hot/only-dev-server');
     entries.push('./index');
   } else {
     entries = ['./index'];
   }
-  // entries.push('babel-polyfill');
-  
   entry['medium-draft'] = entries;
   entry.example = './example';
+  entry['basic'] = './basic.scss';
   return entry;
 }
 
@@ -111,26 +104,33 @@ function getLoaders(env) {
   loaders.push({
     test: /\.jsx?$/,
     include: APP_DIR,
-    loader: env !== ENV_PROD ? 'react-hot!babel' : 'babel',
+    loader: env !== ENV_PROD ? 'react-hot-loader!babel-loader' : 'babel-loader',
     exclude: /node_modules/
   });
 
+  // loaders.push({
+  //   test: /\.jsx?$/,
+  //   loaders: 'eslint-loader',
+  //   enforce: "pre",
+  //   include: APP_DIR,
+  // });
+
   loaders.push({
     test: /\.(jpe?g|png|gif|svg)$/i,
-    loader: 'file'
+    loader: 'file-loader'
   });
 
-  loaders.push({ test: /\.json$/, loader: 'json' });
+  loaders.push({ test: /\.json$/, loader: 'json-loader' });
 
   if (env === ENV_PROD ) {
     loaders.push({
       test: /(\.css|\.scss)$/,
-      loader: ExtractTextPlugin.extract("css?sourceMap!sass?sourceMap")
+      loader: ExtractTextPlugin.extract("css-loader?sourceMap!sass-loader?sourceMap")
     });
   } else {
     loaders.push({
       test: /(\.css|\.scss)$/,
-      loaders: ['style', 'css?sourceMap', 'sass?sourceMap']
+      loaders: ['style-loader', 'css-loader?sourceMap', 'sass-loader?sourceMap']
     });
   }
   return loaders;
@@ -139,7 +139,6 @@ function getLoaders(env) {
 
 var options = {
   context: APP_DIR,
-  debug: !isProd,
   devtool: isProd  ? '' : 'cheap-module-eval-source-map',
   entry: getEntry(env),
   target: 'web',
@@ -149,7 +148,6 @@ var options = {
     filename: '[name].js',
     // filename: env === ENV_DEV ? '[name].js' : '[name].[hash].js',
     chunkFilename: '[id].[hash].bundle.js',
-    sourceMapFile: '[file].map',
     hotUpdateChunkFilename: 'hot/[id].[hash].hot-update.js',
     hotUpdateMainFilename: 'hot/[hash].hot-update.json',
     library: ['MediumDraft'],
@@ -158,19 +156,18 @@ var options = {
   plugins: getPlugins(env),
   module: {
     loaders: getLoaders(env),
-    preLoaders: [
-      {
-        test: /\.jsx?$/,
-        loaders: ['eslint'],
-        include: APP_DIR,
-      }
-    ]
   },
   resolve: {
-    extensions: ['', '.js', '.jsx'],
-    root: APP_DIR,
-    modulesDirectories: ['node_modules'],
-  }
+    modules: [
+      APP_DIR,
+      'node_modules'
+    ],
+    extensions: ['.js', '.jsx'],
+  },
+  devServer: {
+    historyApiFallback: false,
+    noInfo: false,
+  },
 };
 
 if (isProd) {
@@ -215,6 +212,32 @@ if (isProd) {
       }
     }
   ];
+}
+
+var appExportType = process.env.APP_EXPORT_TYPE || '';
+
+if (appExportType === 'exporter') {
+  console.log('Building HTML Exporter');
+  options.entry = {
+    'medium-draft-exporter': './exporter',
+  };
+  options.output.library = 'MediumDraftExporter';
+  options.externals.push({
+    'react-dom/server': {
+      root: 'ReactDOMServer',
+      commonjs2: 'react-dom/server',
+      commonjs: 'react-dom/server',
+      amd: 'react-dom/server'
+    }
+  });
+  options.externals.push({
+    'draft-convert': {
+      root: 'DraftConvert',
+      commonjs2: 'draft-convert',
+      commonjs: 'draft-convert',
+      amd: 'draft-convert'
+    }
+  });
 }
 
 module.exports = options;
