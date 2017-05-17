@@ -1,7 +1,8 @@
+import PropTypes from 'prop-types';
 // import './addbutton.scss';
 
-import React, { PropTypes } from 'react';
-import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
+import React from 'react';
+import CSSTransitionGroup from 'react-transition-group/CSSTransitionGroup';
 
 import { getSelectedBlockNode } from '../util';
 
@@ -33,7 +34,7 @@ export default class AddButton extends React.Component {
     const { editorState } = newProps;
     const contentState = editorState.getCurrentContent();
     const selectionState = editorState.getSelection();
-    if (!selectionState.isCollapsed() || selectionState.anchorKey !== selectionState.focusKey) {
+    if (!selectionState.isCollapsed() || selectionState.anchorKey !== selectionState.focusKey || contentState.getBlockForKey(selectionState.getAnchorKey()).getType().indexOf('atomic') >= 0) {
       // console.log('no sel');
       this.hideBlock();
       return;
@@ -147,10 +148,12 @@ export default class AddButton extends React.Component {
             className={`md-sb-button md-add-button${this.state.isOpen ? ' md-open-button' : ''}`}
             type="button"
           >
-            <i className="fa fa-plus-circle fa-lg" />
+            <svg viewBox="0 0 8 8" height="14" width="14">
+              <path d="M3 0v3h-3v2h3v3h2v-3h3v-2h-3v-3h-2z" />
+            </svg>
           </button>
           {this.state.isOpen ? (
-            <ReactCSSTransitionGroup
+            <CSSTransitionGroup
               transitionName="md-example"
               transitionEnterTimeout={200}
               transitionLeaveTimeout={100}
@@ -168,7 +171,7 @@ export default class AddButton extends React.Component {
                   />
                 );
               })}
-            </ReactCSSTransitionGroup>
+            </CSSTransitionGroup>
           ) : null}
         </div>
       );

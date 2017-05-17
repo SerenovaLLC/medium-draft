@@ -73,10 +73,11 @@ $toolbar-color: #FFFFFF;
     display: block;
     width: 100%;
     padding: 5px;
+    padding-right: 11px;
     border: none;
     background: $toolbar-color;
     color: #fff;
-    font-size: 16px;
+    font-size: 0.9em;
     font-weight: 100;
 
     &:focus {
@@ -88,10 +89,42 @@ $toolbar-color: #FFFFFF;
 
   .md-url-input-close {
     position: absolute;
-    right: 10px;
-    top: 5px;
+    right: 8px;
+    top: 2.5px;
     font-size: 20px;
     cursor: pointer;
+  }
+}
+
+.md-editor-toolbar-edit-link {
+  padding: 4px 5px;
+  font-size: 0.8em;
+  width: 320px;
+
+  a {
+    color: #fff;
+    text-decoration: none;
+  }
+
+  &::after {
+    bottom: initial;
+    top: -5px;
+    transform: rotate(180deg);
+  }
+
+  button {
+    background: none;
+    border: none;
+    color: #fff;
+    float: right;
+    display: inline-block;
+    padding: 0 5px;
+    margin: 5px 0;
+    cursor: pointer;
+
+    &.md-editor-toolbar-edit-button {
+      border-right: 1px solid #fff;
+    }
   }
 }
 
@@ -151,3 +184,11 @@ $toolbar-color: #FFFFFF;
 .md-RichEditor-activeButton {
   color: #23CEF5;
 }
+
+.md-RichEditor-controls-block {
+  .md-RichEditor-styleButton:first-child {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+  }
+}
+
