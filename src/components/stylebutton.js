@@ -1,10 +1,11 @@
-import React, { PropTypes } from 'react';
+import PropTypes from 'prop-types';
+import React from 'react';
 
 import { HYPERLINK } from '../util/constants.js';
 
 export default class StyleButton extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.onToggle = (e) => {
       e.preventDefault();
       this.props.onToggle(this.props.style);
@@ -38,6 +39,10 @@ StyleButton.propTypes = {
   style: PropTypes.string,
   active: PropTypes.bool,
   icon: PropTypes.string,
-  label: PropTypes.string,
+  label: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.element,
+    PropTypes.object,
+  ]),
   description: PropTypes.string,
 };

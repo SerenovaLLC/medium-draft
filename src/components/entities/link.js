@@ -1,4 +1,5 @@
-import React, { PropTypes } from 'react';
+import PropTypes from 'prop-types';
+import React from 'react';
 
 import { Entity } from '../../util/constants';
 
@@ -21,7 +22,7 @@ const Link = (props) => {
   const { url } = contentState.getEntity(entityKey).getData();
   return (
     <a
-      className="md-link hint--top hint--rounded"
+      className="md-link"
       href={url}
       rel="noopener noreferrer"
       target="_blank"
