@@ -86,6 +86,7 @@ class MediumDraftEditor extends React.Component {
     disableToolbar: PropTypes.bool,
     maxOverhang: PropTypes.number,
     showLinkEditToolbar: PropTypes.bool,
+    maxOverhang: PropTypes.number,
   };
 
   static defaultProps = {
@@ -118,6 +119,7 @@ class MediumDraftEditor extends React.Component {
     disableToolbar: false,
     maxOverhang: 0,
     showLinkEditToolbar: true,
+    maxOverhang: 0,
   };
 
   constructor(props) {
