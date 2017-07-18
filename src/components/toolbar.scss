@@ -24,7 +24,7 @@
 @keyframes pop-downwards{0%{transform:matrix(.97,0,0,1,0,-12);opacity:0}20%{transform:matrix(.99,0,0,1,0,-2);opacity:.7}40%{transform:matrix(1,0,0,1,0,1);opacity:1}70%{transform:matrix(1,0,0,1,0,0);opacity:1}100%{transform:matrix(1,0,0,1,0,0);opacity:1}}
 
 
-$toolbar-color: #FFFFFF;
+$toolbar-color: #323845;
 
 
 .md-editor-toolbar {
@@ -34,8 +34,10 @@ $toolbar-color: #FFFFFF;
   z-index: 2;
   position: absolute;
   transition: all 0.1s ease;
-  // visibility: hidden;
-  display: none;
+  visibility: hidden;
+  box-shadow: 0 1px 3px 0 #747171;
+  // background-image: linear-gradient(to bottom,rgba(49,49,47,.99),#262625);
+
   // transition: top 75ms ease-out,left 75ms ease-out;
   border: 1px solid #E4E4E4;
   box-shadow: 0 0 5px 0 rgba(0,0,0,0.27);
@@ -73,10 +75,11 @@ $toolbar-color: #FFFFFF;
     display: block;
     width: 100%;
     padding: 5px;
+    padding-right: 11px;
     border: none;
     background: $toolbar-color;
     color: #fff;
-    font-size: 16px;
+    font-size: 0.9em;
     font-weight: 100;
 
     &:focus {
@@ -88,10 +91,42 @@ $toolbar-color: #FFFFFF;
 
   .md-url-input-close {
     position: absolute;
-    right: 10px;
-    top: 5px;
+    right: 8px;
+    top: 2.5px;
     font-size: 20px;
     cursor: pointer;
+  }
+}
+
+.md-editor-toolbar-edit-link {
+  padding: 4px 5px;
+  font-size: 0.8em;
+  width: 320px;
+
+  a {
+    color: #fff;
+    text-decoration: none;
+  }
+
+  &::after {
+    bottom: initial;
+    top: -5px;
+    transform: rotate(180deg);
+  }
+
+  button {
+    background: none;
+    border: none;
+    color: #fff;
+    float: right;
+    display: inline-block;
+    padding: 0 5px;
+    margin: 5px 0;
+    cursor: pointer;
+
+    &.md-editor-toolbar-edit-button {
+      border-right: 1px solid #fff;
+    }
   }
 }
 
@@ -112,7 +147,8 @@ $toolbar-color: #FFFFFF;
   }
 
   .md-RichEditor-linkButton {
-    color: #4B4B4B;
+    padding: 0 5px;
+    color: #fff;
     text-decoration: none;
   }
 }
@@ -149,5 +185,18 @@ $toolbar-color: #FFFFFF;
 }
 
 .md-RichEditor-activeButton {
-  color: #23CEF5;
+  color: #50FF4D;
+  background: #242933;
+
+  &:hover {
+    color: #08c;
+  }
 }
+
+.md-RichEditor-controls-block {
+  .md-RichEditor-styleButton:first-child {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+  }
+}
+
