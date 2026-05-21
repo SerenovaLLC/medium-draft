@@ -27,6 +27,7 @@
   <script src="/static/common.js"></script>
   <script src="/static/vendor-react.js"></script>
   <script src="/static/basic.js"></script>
+  <script src="https://unpkg.com/dompurify@3.1.6/dist/purify.min.js"></script>
   <script>
     function getScript() {
       var script = document.createElement('script');
@@ -52,7 +53,8 @@
           if (e.data.indexOf('webpackHot') === 0) {
             return;
           }
-          document.getElementById('content').innerHTML = e.data;
+          var safeHtml = window.DOMPurify ? window.DOMPurify.sanitize(e.data) : '';
+          document.getElementById('content').innerHTML = safeHtml;
           if (window.embedly) {
             window.embedly();
           } else {

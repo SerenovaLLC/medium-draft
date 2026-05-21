@@ -3,7 +3,8 @@
 var path = require('path');
 var fs = require('fs');
 var webpack = require('webpack');
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var MiniCssExtractPlugin = require('mini-css-extract-plugin');
+var TerserPlugin = require('terser-webpack-plugin');
 
 var ENV_DEV = 'development';
 var ENV_PROD = 'production';
@@ -36,23 +37,16 @@ var definePlugin = new webpack.DefinePlugin({
   __PRERELEASE__: JSON.stringify(JSON.parse(process.env.BUILD_PRERELEASE || 'false')),
   'process.env.NODE_ENV': '"' +env+ '"'
 });
-var commonsPlugin = new webpack.optimize.CommonsChunkPlugin({
-  name: 'common',
-  minChunks: 3,
-});
-// var vendorBase = new webpack.optimize.CommonsChunkPlugin("vendor-base", "vendor-base.js", Infinity);
-var vendorPlugin = new webpack.optimize.CommonsChunkPlugin({
-  names: ['vendor-react'],
-  minChunks: Infinity,
-  filename: '[name].js',
-  // filename: isDev ? '[name].js' : '[name].[hash].js'
-});
 
-var hashJsonPlugin = function() {
-  this.plugin("done", function(stats) {
-    require("fs").writeFileSync(
-      path.join(__dirname, "hash.json"),
-      JSON.stringify(stats.toJson()["assetsByChunkName"]));
+
+function HashJsonPlugin() {}
+
+HashJsonPlugin.prototype.apply = function(compiler) {
+  compiler.hooks.done.tap('HashJsonPlugin', function(stats) {
+    fs.writeFileSync(
+      path.join(__dirname, 'hash.json'),
+      JSON.stringify(stats.toJson().assetsByChunkName)
+    );
   });
 };
 
@@ -60,18 +54,12 @@ function getPlugins(env) {
   var plugins = [definePlugin];
   if (!isProd) {
     plugins.push(new webpack.NoEmitOnErrorsPlugin());
-    plugins.push(vendorPlugin);
-    plugins.push(commonsPlugin);
   } else {
-    plugins.push(new ExtractTextPlugin('[name].css'));
-    // plugins.push(new ExtractTextPlugin(isDev ? '[name].css' : '[name].[hash].css'));
-    plugins.push(hashJsonPlugin);
-    plugins.push(new webpack.optimize.UglifyJsPlugin({
-      sourceMap: false,
-      output: { comments: false },
-      debug: false,
-      compress: { warnings: false, dead_code: true }
+    plugins.push(new MiniCssExtractPlugin({
+      filename: '[name].css',
     }));
+
+    plugins.push(new HashJsonPlugin());
     plugins.push(bannerPlugin);
   }
   return plugins;
@@ -104,8 +92,12 @@ function getLoaders(env) {
   loaders.push({
     test: /\.jsx?$/,
     include: APP_DIR,
-    loader: env !== ENV_PROD ? 'react-hot-loader!babel-loader' : 'babel-loader',
-    exclude: /node_modules/
+    exclude: /node_modules/,
+    use: [
+      {
+        loader: 'babel-loader',
+      },
+    ],
   });
 
   // loaders.push({
@@ -117,20 +109,48 @@ function getLoaders(env) {
 
   loaders.push({
     test: /\.(jpe?g|png|gif|svg)$/i,
-    loader: 'file-loader'
+    type: 'asset/resource'
   });
-
-  loaders.push({ test: /\.json$/, loader: 'json-loader' });
 
   if (env === ENV_PROD ) {
     loaders.push({
       test: /(\.css|\.scss)$/,
-      loader: ExtractTextPlugin.extract("css-loader?sourceMap&minimize!sass-loader?sourceMap")
+      use: [
+        MiniCssExtractPlugin.loader,
+        {
+          loader: 'css-loader',
+          options: {
+            sourceMap: true,
+          },
+        },
+        {
+          loader: 'sass-loader',
+          options: {
+            sourceMap: true,
+            implementation: require('sass'),
+          },
+        },
+      ],
     });
   } else {
     loaders.push({
       test: /(\.css|\.scss)$/,
-      loaders: ['style-loader', 'css-loader?sourceMap', 'sass-loader?sourceMap']
+      use: [
+        'style-loader',
+        {
+          loader: 'css-loader',
+          options: {
+            sourceMap: true,
+          },
+        },
+        {
+          loader: 'sass-loader',
+          options: {
+            sourceMap: true,
+            implementation: require('sass'),
+          },
+        },
+      ],
     });
   }
   return loaders;
@@ -139,7 +159,8 @@ function getLoaders(env) {
 
 var options = {
   context: APP_DIR,
-  devtool: isProd  ? '' : 'cheap-module-eval-source-map',
+  mode: env,
+  devtool: isProd ? false : 'eval-cheap-module-source-map',
   entry: getEntry(env),
   target: 'web',
   output: {
@@ -155,7 +176,34 @@ var options = {
   },
   plugins: getPlugins(env),
   module: {
-    loaders: getLoaders(env),
+    rules: getLoaders(env),
+  },
+  optimization: {
+    splitChunks: isProd ? false : {
+      chunks: 'all',
+      cacheGroups: {
+        common: {
+          name: 'common',
+          minChunks: 3,
+          chunks: 'all',
+          enforce: true,
+        },
+      },
+    },
+    minimize: isProd,
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          format: {
+            comments: false,
+          },
+          compress: {
+            dead_code: true,
+          },
+        },
+        extractComments: false,
+      }),
+    ],
   },
   resolve: {
     modules: [
@@ -165,8 +213,14 @@ var options = {
     extensions: ['.js', '.jsx'],
   },
   devServer: {
-    historyApiFallback: false,
-    noInfo: false,
+    host: '0.0.0.0',
+    static: {
+      directory: path.join(__dirname, 'dist'),
+    },
+    hot: true,
+    devMiddleware: {
+      stats: 'normal',
+    },
   },
 };
 

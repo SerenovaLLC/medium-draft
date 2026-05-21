@@ -1,3 +1,5 @@
+@use "sass:math";
+
 $control-btn-width: 22px;
 
 .md-block-atomic {
@@ -35,7 +37,7 @@ $control-btn-width: 22px;
         cursor: pointer;
         height: $control-btn-width;
         width: $control-btn-width;
-        border-radius: $control-btn-width/2;
+        border-radius: math.div($control-btn-width, 2);
         position: absolute;
         z-index: 1;
         left: -27px;
