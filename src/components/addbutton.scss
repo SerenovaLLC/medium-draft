@@ -1,3 +1,5 @@
+@use "sass:math";
+
 $add-btn-width: 30px;
 
 
@@ -18,7 +20,7 @@ $add-btn-width: 30px;
     cursor: pointer;
     height: $add-btn-width;
     width: $add-btn-width;
-    border-radius: $add-btn-width/2;
+    border-radius: math.div($add-btn-width, 2);
     font-weight: bold;
     font-size: 20px;
     margin-right: 2px;
